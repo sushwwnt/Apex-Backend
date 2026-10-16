@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { register } from "node:module";
-import { registerUser } from "../services/auth.service";
+import { loginUser, registerUser } from "../services/auth.service";
 
 export const authRouter = Router()
 
@@ -18,5 +18,21 @@ authRouter.post("/register", async(req, res, next)=> {
         });
     }catch(error){
         next(error);
+    }
+});
+
+authRouter.post("/login", async(req, res, next)=> {
+    try{
+        const {email, password}= req.body;
+
+        const {accessToken}= await loginUser(email, password)
+
+        res.status(200).json({
+            success : true,
+            data : {accessToken}
+        })
+
+    }catch(err){
+        next(err)
     }
 })

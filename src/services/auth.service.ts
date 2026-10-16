@@ -1,7 +1,8 @@
 import { error } from "node:console";
 import { AppError } from "../errors/AppError";
-import { createUser, findUserByEmail } from "../repositories/user.repository";
+import { createUser, findUserByEmail, findUserByEmailWithPassword } from "../repositories/user.repository";
 import bcrypt from "bcryptjs";
+import { signAccessToken } from "../lib/jwt";
 
 
 export async function registerUser(
@@ -32,4 +33,34 @@ export async function registerUser(
   const passwordHash = await bcrypt.hash(password, 10)
 
   await createUser(normalizeEmail, passwordHash)
+}
+
+export async function loginUser(
+    email: string,
+    password: string
+): Promise<{accessToken:string }> {
+if (!email || !password) {
+    throw new AppError(400, "Email and password are required");
+  }
+
+  const normalizeEmail = email.toLowerCase().trim()
+  const user = await findUserByEmailWithPassword(normalizeEmail)
+
+  if(!user?.password_hash) {
+    throw new AppError(401, "Invalid email or password")
+  }
+
+  const isPasswordValid = await bcrypt.compare(password, user.password_hash)
+
+  if(!isPasswordValid){
+    throw new AppError(401, "Invalid email or password")
+  }
+
+  const accessToken = signAccessToken({
+    userId: user.id,
+    email: user.email,
+    role: user.role
+  })
+
+  return{accessToken}
 }
