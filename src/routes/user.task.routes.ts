@@ -2,8 +2,10 @@ import { Router } from "express";
 import { authenticate } from "../middlewares/auth.middleware";
 import {
   createUserTask,
+  deleteUserTask,
   getUserTask,
   getUserTaskById,
+  updateUserTask,
 } from "../services/user.task.service";
 
 export const userTaskRouter = Router();
@@ -47,5 +49,33 @@ userTaskRouter.get("/:taskId", async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+});
+
+userTaskRouter.patch("/:taskId", async (req, res, next) => {
+  try {
+    const task = await updateUserTask(
+      req.params.taskId,
+      req.user!.userId,
+      req.body.title,
+    );
+
+    res.status(200).json({
+      success: true,
+      data: { task },
+    });
+  } catch (error) {}
+});
+
+userTaskRouter.delete("/:taskId", async (req, res, next) => {
+  try {
+    await deleteUserTask(req.params.taskId, req.user!.userId);
+
+    res.status(200).json({
+      success: true,
+      message: "Task deleted successfully from DB",
+    });
+  } catch (err) {
+    next(err);
   }
 });
